@@ -1,0 +1,148 @@
+> # Load libraries
+> library(tidyverse)
+
+ # Import dataset
+> telco <- read.csv(
++   "C:/Users/user/Videos/WA_Fn-UseC_-Telco-Customer-Churn.csv",
++   stringsAsFactors = FALSE
++ )
+
+ # View structure
+> str(telco)
+
+ # Replace blank TotalCharges with NA
+> telco$TotalCharges[telco$TotalCharges == ""] <- NA
+> 
+> # Convert TotalCharges to numeric
+> telco$TotalCharges <- as.numeric(telco$TotalCharges)
+> 
+> # Check missing values
+> colSums(is.na(telco))
+
+ # Remove records with missing TotalCharges
+> telco <- na.omit(telco)
+> 
+> factor_vars <- c(
++   "gender",
++   "Partner",
++   "Dependents",
++   "PhoneService",
++   "MultipleLines",
++   "InternetService",
++   "OnlineSecurity",
++   "OnlineBackup",
++   "DeviceProtection",
++   "TechSupport",
++   "StreamingTV",
++   "StreamingMovies",
++   "Contract",
++   "PaperlessBilling",
++   "PaymentMethod",
++   "Churn"
++ )
+> telco[factor_vars] <- lapply(telco[factor_vars], factor)
+> 
+> # Convert SeniorCitizen to factor
+> telco$SeniorCitizen <- factor(
++   telco$SeniorCitizen,
++   levels = c(0,1),
++   labels = c("No","Yes")
++ )
+> 
+> # 1. Churn Binary Variable
+> telco$Churn_Binary <- ifelse(
++   telco$Churn == "Yes", 1, 0
++ )
+> 
+> # 2. Tenure Group
+> telco$Tenure_Group <- cut(
++   telco$tenure,
++   breaks = c(-Inf,12,24,48,72),
++   labels = c(
++     "0-12 Months",
++     "13-24 Months",
++     "25-48 Months",
++     "49-72 Months"
++   )
++ )
+> 
+> # 3. Monthly Charge Category
+> telco$MonthlyCharge_Group <- cut(
++   telco$MonthlyCharges,
++   breaks = quantile(
++     telco$MonthlyCharges,
++     probs = c(0,0.33,0.66,1)
++   ),
++   include.lowest = TRUE,
++   labels = c(
++     "Low",
++     "Medium",
++     "High"
++   )
++ )
+> 
+> # 4. Customer Value Segment
+> telco$Customer_Value <- case_when(
++   telco$TotalCharges < 1000 ~ "Low Value",
++   telco$TotalCharges < 3000 ~ "Medium Value",
++   TRUE ~ "High Value"
++ )
+> 
+> # 5. Contract Length Category
+> telco$Contract_Length <- case_when(
++   telco$Contract == "Month-to-month" ~ "Short-Term",
++   telco$Contract == "One year" ~ "Medium-Term",
++   telco$Contract == "Two year" ~ "Long-Term"
++ )
+> 
+> # 6. Customer Risk Segment
+> telco$Risk_Segment <- case_when(
++   telco$Contract == "Month-to-month" &
++     telco$PaperlessBilling == "Yes" &
++     telco$MonthlyCharges > median(telco$MonthlyCharges)
++     ~ "High Risk",
++ 
++   telco$Contract == "Month-to-month"
++     ~ "Medium Risk",
++ 
++   TRUE
++     ~ "Low Risk"
++ )
+> 
+> # 7. Active Customer Indicator
+> telco$Active_Customer <- ifelse(
++   telco$Churn == "No",
++   "Active",
++   "Inactive"
++ )
+> 
+> # Convert new variables to factors
+> new_factors <- c(
++   "Tenure_Group",
++   "MonthlyCharge_Group",
++   "Customer_Value",
++   "Contract_Length",
++   "Risk_Segment",
++   "Active_Customer"
++ )
+> 
+> telco[new_factors] <- lapply(
++   telco[new_factors],
++   factor
++ )
+> 
+> summary(telco)
+> str(telco)
+> str(telco)
+
+> # Churn Rate
+> mean(telco$Churn_Binary) * 100
+[1] 26.5785
+> 
+> # Save cleaned dataset
+> write.csv(
++   telco,
++   "C:/Users/user/Videos/Telco_Cleaned.csv",
++   row.names = FALSE
++ )
+
